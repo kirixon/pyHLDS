@@ -1,7 +1,5 @@
 from datetime import datetime
-import socket
-import random
-import shlex
+import socket, argparse, random, shlex
 
 # Consts
 SOCKET_BUF_SIZE = 2048
@@ -13,8 +11,8 @@ BUILD_NUMBER = '8308'
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 challenges = [] # Challenges list
 clients = [] # Connected clients
-server_password = 'kaminari' # Server user password
-cuserid = 1
+server_password = '' # Server user password
+cuserid = 1 # Current max user id
 
 def GetChallenge(addr):
 	curtime = datetime.now()
@@ -30,7 +28,7 @@ def GetChallenge(addr):
 	return challenge
 
 def RejectConnection(address, text):
-	sock.sendto(b'\xff\xff\xff\xff' + '9'.encode('ascii') + text.encode('ascii') + '\n'.encode('ascii'), address)
+	sock.sendto(b'\xff\xff\xff\xff' + ('9' + text + '\n').encode('ascii'), address)
 
 def CheckChallenge(address, challenge):
 	res = next((item for item in challenges if item['address'] == address), None)
@@ -58,9 +56,16 @@ def CheckInfo(address, info):
 	else:
 		global cuserid
 		clientinfo.update({'userid': cuserid, 'connected': True, 'active': False, 'spawned': False, 'uploading': False, 'fully_connected': False, 'address': address})
-		cuserid = cuserid + 1
+		cuserid += 1
 		clients.append(clientinfo)
 		return True
+
+def ProcessMessage(address, data):
+	seq = data[0:4]
+	seq_ack = data[4:8]
+	message = seq >> 31;
+	ack = seq_ack >> 31;
+	print(message,ack)
 
 def ProcessUnconnected(address, data):
 	data = shlex.split(data.decode('ascii').rstrip('\n'))
@@ -91,15 +96,25 @@ def ProcessUnconnected(address, data):
 		pass
 
 def main():
+	parser = argparse.ArgumentParser(description='pyHLDS')
+	parser.add_argument('-ip', metavar='ADDRESS', help='bind address')
+	#parser.add_argument('-p', metavar='PORT', help='server port')
+	parser.add_argument('-sv_password', metavar='PASSWORD', help='server password')
+	#parser.add_argument('+map', metavar='MAP', help='map')
+	args = parser.parse_args()
+
 	print("pyHLDS by KiriXon")
 	print("=================")
 
 	try:
-		sock.bind(('172.16.24.154', 27015))
+		sock.bind((args.ip, 27015))
 	except sock.error:
 		print('ERROR binding socket')
 
 	print("Listening on port 27015")
+
+	global server_password
+	server_password = args.sv_password
 
 	while True:
 		received = sock.recvfrom(SOCKET_BUF_SIZE)
@@ -111,7 +126,7 @@ def main():
 			ProcessUnconnected(address, data[4:])
 			continue
 
-		
+		ProcessMessage(address, data)
 
 	sock.close()
 
