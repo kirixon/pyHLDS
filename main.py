@@ -60,12 +60,21 @@ def CheckInfo(address, info):
 		clients.append(clientinfo)
 		return True
 
+def UnMunge2(data, len, seq):
+	mungelen = len & ~3
+	mungelen /= 4
+	print(mungelen)
+	for i in range(0,mungelen):
+		pass
+
 def ProcessMessage(address, data):
 	seq = data[0:4]
 	seq_ack = data[4:8]
 	message = seq >> 31;
 	ack = seq_ack >> 31;
-	print(message,ack)
+	contain_fragments = True if seq & (1 << 30) else False
+	print(message,ack,contain_fragments)
+	UnMunge2(data[8:], len(data)-8, seq & 0xff)
 
 def ProcessUnconnected(address, data):
 	data = shlex.split(data.decode('ascii').rstrip('\n'))
