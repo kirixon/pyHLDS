@@ -69,7 +69,7 @@ def UnMunge2(data, length, seq):
 	length /= 4 # Amount of longs in message
 	times = length // 16
 	rest = length % 16
-	newdata = data.copy()
+	newdata = [int.from_bytes(data[i] + data[i+1] + data[i+2] + data[i+3], 'little') for i in range(0,len(data),4)]
 
 	if times != 0:
 		for i in range(0, times - 1):
