@@ -64,7 +64,35 @@ def bswap(i):
 	return struct.unpack("<I", struct.pack(">I", i))[0]
 
 def UnMunge2(data, length, seq):
-	pass
+	mungelist = [0xFFFFE7A5, 0xBFEFFFE5, 0xFFBFEFFF, 0xBFEFBFED, 0xBFAFEFBF, 0xFFBFAFEF, 0xFFEFBFAD, 0xFFFFEFBF, 0xFFEFF7EF, 0xBFEFE7F5, 0xBFBFE7E5, 0xFFAFB7E7, 0xBFFFAFB5, 0xBFAFFFAF, 0xFFAFA7FF, 0xFFEFA7A5]
+	mseq = bswap(~seq) ^ seq
+	length /= 4 # Amount of longs in message
+	times = length // 16
+	rest = length % 16
+	newdata = []
+
+	if times != 0:
+		for i in range(0, times - 1):
+			newdata[16*i] = bswap(data[16*i] ^ mseq ^ mungelist[0])
+			newdata[16*i + 1] = bswap(data[16*i + 1] ^ mseq ^ mungelist[1])
+			newdata[16*i + 2] = bswap(data[16*i + 2] ^ mseq ^ mungelist[2])
+			newdata[16*i + 3] = bswap(data[16*i + 3] ^ mseq ^ mungelist[3])
+			newdata[16*i + 4] = bswap(data[16*i + 4] ^ mseq ^ mungelist[4])
+			newdata[16*i + 5] = bswap(data[16*i + 5] ^ mseq ^ mungelist[5])
+			newdata[16*i + 6] = bswap(data[16*i + 6] ^ mseq ^ mungelist[6])
+			newdata[16*i + 7] = bswap(data[16*i + 7] ^ mseq ^ mungelist[7])
+			newdata[16*i + 8] = bswap(data[16*i + 8] ^ mseq ^ mungelist[8])
+			newdata[16*i + 9] = bswap(data[16*i + 9] ^ mseq ^ mungelist[9])
+			newdata[16*i + 10] = bswap(data[16*i + 10] ^ mseq ^ mungelist[10])
+			newdata[16*i + 11] = bswap(data[16*i + 11] ^ mseq ^ mungelist[11])
+			newdata[16*i + 12] = bswap(data[16*i + 12] ^ mseq ^ mungelist[12])
+			newdata[16*i + 13] = bswap(data[16*i + 13] ^ mseq ^ mungelist[13])
+			newdata[16*i + 14] = bswap(data[16*i + 14] ^ mseq ^ mungelist[14])
+			newdata[16*i + 15] = bswap(data[16*i + 15] ^ mseq ^ mungelist[15])
+
+	newdata[16 * times + (rest - 1)] = bswap(data[16 * times + (rest - 1)] ^ mseq ^ mungelist[rest - 1])
+
+	return newdata
 
 def ProcessMessage(address, data):
 	seq = int.from_bytes(data[0:4], 'little')
