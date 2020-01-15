@@ -60,20 +60,23 @@ def CheckInfo(address, info):
 		clients.append(clientinfo)
 		return True
 
-def UnMunge2(data, len, seq):
-	mungelen = len & ~3
-	mungelen /= 4
-	print(mungelen)
-	for i in range(0,mungelen):
-		pass
+def bswap(i):
+	return struct.unpack("<I", struct.pack(">I", i))[0]
+
+def UnMunge2(data, length, seq):
+	pass
 
 def ProcessMessage(address, data):
-	seq = data[0:4]
-	seq_ack = data[4:8]
+	seq = int.from_bytes(data[0:4], 'little')
+	if seq < 0:
+		seq = seq & 0xffffffff # Shall be unsigned
+	seq_ack = int.from_bytes(data[4:8], 'little')
+	if seq_ack < 0:
+		seq_ack = seq_ack & 0xffffffff # Shall be unsigned
 	message = seq >> 31;
 	ack = seq_ack >> 31;
 	contain_fragments = True if seq & (1 << 30) else False
-	print(message,ack,contain_fragments)
+	#print(message,ack,contain_fragments)
 	UnMunge2(data[8:], len(data)-8, seq & 0xff)
 
 def ProcessUnconnected(address, data):
