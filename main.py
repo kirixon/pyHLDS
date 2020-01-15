@@ -69,28 +69,28 @@ def UnMunge2(data, length, seq):
 	length /= 4 # Amount of longs in message
 	times = length // 16
 	rest = length % 16
-	newdata = []
+	newdata = data.copy()
 
 	if times != 0:
 		for i in range(0, times - 1):
-			newdata[16*i] = bswap(data[16*i] ^ mseq ^ mungelist[0])
-			newdata[16*i + 1] = bswap(data[16*i + 1] ^ mseq ^ mungelist[1])
-			newdata[16*i + 2] = bswap(data[16*i + 2] ^ mseq ^ mungelist[2])
-			newdata[16*i + 3] = bswap(data[16*i + 3] ^ mseq ^ mungelist[3])
-			newdata[16*i + 4] = bswap(data[16*i + 4] ^ mseq ^ mungelist[4])
-			newdata[16*i + 5] = bswap(data[16*i + 5] ^ mseq ^ mungelist[5])
-			newdata[16*i + 6] = bswap(data[16*i + 6] ^ mseq ^ mungelist[6])
-			newdata[16*i + 7] = bswap(data[16*i + 7] ^ mseq ^ mungelist[7])
-			newdata[16*i + 8] = bswap(data[16*i + 8] ^ mseq ^ mungelist[8])
-			newdata[16*i + 9] = bswap(data[16*i + 9] ^ mseq ^ mungelist[9])
-			newdata[16*i + 10] = bswap(data[16*i + 10] ^ mseq ^ mungelist[10])
-			newdata[16*i + 11] = bswap(data[16*i + 11] ^ mseq ^ mungelist[11])
-			newdata[16*i + 12] = bswap(data[16*i + 12] ^ mseq ^ mungelist[12])
-			newdata[16*i + 13] = bswap(data[16*i + 13] ^ mseq ^ mungelist[13])
-			newdata[16*i + 14] = bswap(data[16*i + 14] ^ mseq ^ mungelist[14])
-			newdata[16*i + 15] = bswap(data[16*i + 15] ^ mseq ^ mungelist[15])
+			newdata[16*i] = bswap(newdata[16*i] ^ mseq ^ mungelist[0])
+			newdata[16*i + 1] = bswap(newdata[16*i + 1] ^ mseq ^ mungelist[1])
+			newdata[16*i + 2] = bswap(newdata[16*i + 2] ^ mseq ^ mungelist[2])
+			newdata[16*i + 3] = bswap(newdata[16*i + 3] ^ mseq ^ mungelist[3])
+			newdata[16*i + 4] = bswap(newdata[16*i + 4] ^ mseq ^ mungelist[4])
+			newdata[16*i + 5] = bswap(newdata[16*i + 5] ^ mseq ^ mungelist[5])
+			newdata[16*i + 6] = bswap(newdata[16*i + 6] ^ mseq ^ mungelist[6])
+			newdata[16*i + 7] = bswap(newdata[16*i + 7] ^ mseq ^ mungelist[7])
+			newdata[16*i + 8] = bswap(newdata[16*i + 8] ^ mseq ^ mungelist[8])
+			newdata[16*i + 9] = bswap(newdata[16*i + 9] ^ mseq ^ mungelist[9])
+			newdata[16*i + 10] = bswap(newdata[16*i + 10] ^ mseq ^ mungelist[10])
+			newdata[16*i + 11] = bswap(newdata[16*i + 11] ^ mseq ^ mungelist[11])
+			newdata[16*i + 12] = bswap(newdata[16*i + 12] ^ mseq ^ mungelist[12])
+			newdata[16*i + 13] = bswap(newdata[16*i + 13] ^ mseq ^ mungelist[13])
+			newdata[16*i + 14] = bswap(newdata[16*i + 14] ^ mseq ^ mungelist[14])
+			newdata[16*i + 15] = bswap(newdata[16*i + 15] ^ mseq ^ mungelist[15])
 
-	newdata[16 * times + (rest - 1)] = bswap(data[16 * times + (rest - 1)] ^ mseq ^ mungelist[rest - 1])
+	newdata[16 * times + (rest - 1)] = bswap(newdata[16 * times + (rest - 1)] ^ mseq ^ mungelist[rest - 1])
 
 	return newdata
 
@@ -105,7 +105,7 @@ def ProcessMessage(address, data):
 	ack = seq_ack >> 31;
 	contain_fragments = True if seq & (1 << 30) else False
 	#print(message,ack,contain_fragments)
-	UnMunge2(data[8:], len(data)-8, seq & 0xff)
+	print(UnMunge2(data[8:], len(data)-8, seq & 0xff))
 
 def ProcessUnconnected(address, data):
 	data = shlex.split(data.decode('ascii').rstrip('\n'))
