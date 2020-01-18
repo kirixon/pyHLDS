@@ -1,5 +1,5 @@
 from datetime import datetime
-import socket, argparse, random, shlex
+import socket, argparse, random, shlex, struct
 
 # Consts
 SOCKET_BUF_SIZE = 2048
@@ -60,16 +60,17 @@ def CheckInfo(address, info):
 		clients.append(clientinfo)
 		return True
 
-def bswap(i):
-	return struct.unpack("<I", struct.pack(">I", i))[0]
+def bswap(x):
+	return (((x << 24) & 0xFF000000) | ((x <<  8) & 0x00FF0000) | ((x >>  8) & 0x0000FF00) | ((x >> 24) & 0x000000FF))
 
 def UnMunge2(data, length, seq):
 	mungelist = [0xFFFFE7A5, 0xBFEFFFE5, 0xFFBFEFFF, 0xBFEFBFED, 0xBFAFEFBF, 0xFFBFAFEF, 0xFFEFBFAD, 0xFFFFEFBF, 0xFFEFF7EF, 0xBFEFE7F5, 0xBFBFE7E5, 0xFFAFB7E7, 0xBFFFAFB5, 0xBFAFFFAF, 0xFFAFA7FF, 0xFFEFA7A5]
 	mseq = bswap(~seq) ^ seq
 	length /= 4 # Amount of longs in message
-	times = length // 16
-	rest = length % 16
-	newdata = [int.from_bytes(data[i] + data[i+1] + data[i+2] + data[i+3], 'little') for i in range(0,len(data),4)]
+	times = round(length // 16)
+	rest = round(length % 16)
+
+	newdata = [int.from_bytes(data[i:i+4], 'big') for i in range(0,len(data),4)]
 
 	if times != 0:
 		for i in range(0, times - 1):
@@ -92,20 +93,38 @@ def UnMunge2(data, length, seq):
 
 	newdata[16 * times + (rest - 1)] = bswap(newdata[16 * times + (rest - 1)] ^ mseq ^ mungelist[rest - 1])
 
-	return newdata
+	dbytes = []
+
+	for i in newdata:
+		dbytes.extend(i.to_bytes(4, 'big'))
+
+	return dbytes
 
 def ProcessMessage(address, data):
-	seq = int.from_bytes(data[0:4], 'little')
-	if seq < 0:
-		seq = seq & 0xffffffff # Shall be unsigned
-	seq_ack = int.from_bytes(data[4:8], 'little')
-	if seq_ack < 0:
-		seq_ack = seq_ack & 0xffffffff # Shall be unsigned
-	message = seq >> 31;
-	ack = seq_ack >> 31;
+	seq = int.from_bytes(data[0:4], 'big')
+	print(bin(seq))
+	print(bin(1 << 30))
+	print(bin(seq & (1 << 30)))
+
+	seq_ack = int.from_bytes(data[4:8], 'big')
+	rel_message = seq >> 31;
+	rel_ack = seq_ack >> 31;
+
 	contain_fragments = True if seq & (1 << 30) else False
-	#print(message,ack,contain_fragments)
-	print(UnMunge2(data[8:], len(data)-8, seq & 0xff))
+
+	#print(UnMunge2(data[8:], len(data)-8, seq & 0xff))
+
+	if (contain_fragments):
+		pass
+
+	seq &= ~(1 << 31)
+	seq &= ~(1 << 30)
+	seq_ack &= ~(1 << 31)
+	seq_ack &= ~(1 << 30)
+
+#	print('seq =',seq,'ack =',seq_ack,'rel =',rel_message)
+
+
 
 def ProcessUnconnected(address, data):
 	data = shlex.split(data.decode('ascii').rstrip('\n'))
@@ -147,11 +166,11 @@ def main():
 	print("=================")
 
 	try:
-		sock.bind((args.ip, 27015))
+		sock.bind((args.ip, 27500))
 	except sock.error:
 		print('ERROR binding socket')
 
-	print("Listening on port 27015")
+	print("Listening on port 27500")
 
 	global server_password
 	server_password = args.sv_password
